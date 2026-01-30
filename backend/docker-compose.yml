@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=pitucha2209
+      - POSTGRES_DB=homelab_db
+    ports:
+      - "5432:5432"
+    # Mudamos o volume para a raiz sugerida pelo log para evitar o erro
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+volumes:
+  postgres_data:

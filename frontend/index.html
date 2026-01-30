@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HomeLab OS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="wallpaper-overlay"></div>
+    
+    <main class="dashboard">
+        <header class="status-bar">
+            <span id="clock">00:00</span>
+            <div class="system-icons">
+                <i class="fas fa-wifi"></i>
+                <i class="fas fa-server" id="server-status-icon"></i>
+            </div>
+        </header>
+
+        <section class="app-grid">
+            <a href="apps/todo-list/index.html" class="app-card">
+                <div class="icon-box purple">
+                    <i class="fas fa-list-check"></i>
+                </div>
+                <span>Tarefas</span>
+            </a>
+
+            <div class="app-card disabled">
+                <div class="icon-box blue">
+                    <i class="fas fa-thermometer-half"></i>
+                </div>
+                <span>Clima</span>
+            </div>
+
+            <div class="app-card disabled">
+                <div class="icon-box green">
+                    <i class="fas fa-microchip"></i>
+                </div>
+                <span>Status</span>
+            </div>
+
+            <div class="app-card add-new">
+                <div class="icon-box gray">
+                    <i class="fas fa-plus"></i>
+                </div>
+                <span>Novo App</span>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
