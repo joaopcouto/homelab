@@ -13,20 +13,21 @@ export async function getTodos(req, res) {
     try {
         const todos = await prisma.todo.findMany();
         res.json(todos);
-    } catch(e) {
+    } catch (e) {
+        console.error(e);
         res.status(500).send("Erro interno no servidor");
     }
-} 
+}
 
 export async function createTodo(req, res) {
     const result = createTodoSchema.safeParse(req.body);
     if (!result.success) {
         return res.status(400).send(result.error)
-    } 
-    
+    }
+
     try {
         const { title } = req.body;
-        const newTodo = await prisma.todo.create({ data: { title }});
+        const newTodo = await prisma.todo.create({ data: { title } });
         res.json(newTodo);
     } catch (e) {
         res.status(500).send("Erro interno no servidor");
@@ -38,11 +39,11 @@ export async function deleteTodo(req, res) {
     if (!result.success) {
         return res.status(400).send(result.error);
     }
-    try {   
+    try {
         const { id } = req.params;
-        const deleteTodo = await prisma.todo.delete({ where: { id: Number(id) }});
+        const deleteTodo = await prisma.todo.delete({ where: { id: Number(id) } });
         res.json(deleteTodo);
-    } catch(e) {
+    } catch (e) {
         if (e.code === 'P2025') {
             return res.status(404).send("Tarefa não encontrada")
         }
@@ -60,14 +61,14 @@ export async function updateTodo(req, res) {
         const { id } = req.params;
         const todoCompleted = await prisma.todo.findUnique({ where: { id: Number(id) } });
         if (todoCompleted) {
-            const changedTodo = !todoCompleted.completed; 
-            const updateTodo = await prisma.todo.update({ where: { id: Number(id) }, data: { completed: changedTodo }  });
+            const changedTodo = !todoCompleted.completed;
+            const updateTodo = await prisma.todo.update({ where: { id: Number(id) }, data: { completed: changedTodo } });
             res.json(updateTodo);
-        } 
+        }
         else {
             res.status(404).send("Tarefa não encontrada")
         }
-    } catch(e) {
-            res.status(500).send("Erro interno no servidor");
-        }
+    } catch (e) {
+        res.status(500).send("Erro interno no servidor");
+    }
 }
