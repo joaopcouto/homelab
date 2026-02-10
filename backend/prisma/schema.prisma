@@ -16,3 +16,11 @@ model Todo {
   completed Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+model Quicknote {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  category  String   
+  createdAt DateTime @default(now())
+}

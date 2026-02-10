@@ -66,7 +66,7 @@ export async function updateTodo(req, res) {
             res.json(updateTodo);
         }
         else {
-            res.status(404).send("Tarefa não encontrada")
+            res.status(404).send("Tarefa não encontrada");
         }
     } catch (e) {
         res.status(500).send("Erro interno no servidor");
