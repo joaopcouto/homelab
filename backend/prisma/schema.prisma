@@ -11,16 +11,19 @@ datasource db {
 }
 
 model Todo {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
+  note      Quicknote @relation(fields: [noteId], references: [id])
+  noteId    Int
   title     String
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
+  completed Boolean   @default(false)
+  createdAt DateTime  @default(now())
 }
 
 model Quicknote {
   id        Int      @id @default(autoincrement())
   title     String
   content   String
-  category  String   
+  category  String
+  todos     Todo[]
   createdAt DateTime @default(now())
 }

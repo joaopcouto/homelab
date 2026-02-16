@@ -1,3 +1,4 @@
+import { todo } from 'node:test';
 import prisma from '../database/prisma.ts';
 import { z } from 'zod';
 
@@ -14,18 +15,20 @@ const IdSchema = z.object({
 });
 
 export async function getGlobalQuickNotes(req, res) {
-    const { keyword } = req.query;
+    const { q } = req.query;
 
-    if (!keyword) {
+    if (!q) {
         return res.status(404).send("É necessário um termo para busca");
     }
 
     try {
         const keywordInNote = await prisma.quicknote.findMany({
-            where: { 
-                OR: 
-                [{ title: { contains: String(keyword), mode: 'insensitive' } }, 
-                 { content: { contains: String(keyword), mode: 'insensitive' } }] } });
+            where: {
+                OR:
+                    [{ title: { contains: String(q), mode: 'insensitive' } },
+                    { content: { contains: String(q), mode: 'insensitive' } }]
+            }
+        });
         res.json(keywordInNote);
     } catch (e) {
         console.error(e)
@@ -35,7 +38,13 @@ export async function getGlobalQuickNotes(req, res) {
 
 export async function getQuickNotes(req, res) {
     try {
-        const quickNotes = await prisma.quicknote.findMany();
+        const quickNotes = await prisma.quicknote.findMany({ include: { todos: true } });
+        for (let j = 0; j < quickNotes.length; j++) {
+            const totalTasks = quickNotes[j]?.todos.length;
+            const completedTasks = quickNotes[j].todos.filter((todo) => todo.completed === true).length;
+            quickNotes[j].totalTasks = totalTasks
+            quickNotes[j].completedTasks = completedTasks
+        }
         res.json(quickNotes);
     } catch (e) {
         console.error(e)

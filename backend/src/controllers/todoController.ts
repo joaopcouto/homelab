@@ -2,6 +2,7 @@ import prisma from '../database/prisma.ts';
 import { z } from 'zod';
 
 const createTodoSchema = z.object({
+    noteId: z.number().min(1, "O ID do uma nota é obrigatória"),
     title: z.string().min(3, "O título deve ter pelo menos 3 caracteres").max(255)
 });
 
@@ -26,8 +27,8 @@ export async function createTodo(req, res) {
     }
 
     try {
-        const { title } = req.body;
-        const newTodo = await prisma.todo.create({ data: { title } });
+        const { noteId, title } = req.body;
+        const newTodo = await prisma.todo.create({ data: { noteId, title } });
         res.json(newTodo);
     } catch (e) {
         res.status(500).send("Erro interno no servidor");
