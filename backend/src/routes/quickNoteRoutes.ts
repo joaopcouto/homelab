@@ -1,17 +1,31 @@
-import express from 'express';
+import express from "express";
 
-import {getQuickNotes, getGlobalQuickNotes, createQuickNotes, deleteQuickNotes, updateQuickNotes} from '../controllers/quickNoteController.ts';
+import {
+  getQuickNotes,
+  getNotesQuery,
+  getGlobalQuickNotes,
+  createQuickNotes,
+  deleteQuickNotes,
+  updateQuickNotes,
+} from "../controllers/quickNoteController.ts";
+import { authMiddleware } from "../middlewares/authMiddleware.ts";
 
 const quickNoteRouter = express.Router();
 
-quickNoteRouter.get('/', getQuickNotes);
+quickNoteRouter.use((req, res, next) => {
+  authMiddleware(req, res, next);
+});
 
-quickNoteRouter.get('/search', getGlobalQuickNotes);
+quickNoteRouter.get("/", getQuickNotes);
 
-quickNoteRouter.post('/', createQuickNotes);
+quickNoteRouter.get("/query", getNotesQuery);
 
-quickNoteRouter.delete('/:id', deleteQuickNotes);
+quickNoteRouter.get("/search", getGlobalQuickNotes);
 
-quickNoteRouter.patch('/:id', updateQuickNotes);
+quickNoteRouter.post("/", createQuickNotes);
+
+quickNoteRouter.delete("/:id", deleteQuickNotes);
+
+quickNoteRouter.patch("/:id", updateQuickNotes);
 
 export default quickNoteRouter;

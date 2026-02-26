@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import todoRouter from './routes/todoRoutes.ts';
 import quickNoteRouter from './routes/quickNoteRoutes.ts';
+import authRouter from './routes/authRoutes.ts';
 
 process.on('unhandledRejection', (reason, p) => {
     console.error('Unhandled Rejection at:', p, 'reason:', reason);
@@ -18,6 +19,7 @@ app.use(express.json());
 
 app.use('/todos', todoRouter);
 app.use('/quickNotes', quickNoteRouter);
+app.use('/auth', authRouter)
 
 app.listen(3333, '0.0.0.0', () => {
     console.log("Servidor rodando na porta 3333");
