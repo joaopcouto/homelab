@@ -1,7 +1,7 @@
 import bcrypt from "bcrypt";
 import prisma from "../database/prisma.ts";
 import { z } from "zod";
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 
 const createUserSchema = z.object({
   name: z.string().min(3, "O nome deve ter no mínimo 3 letras").max(100),
@@ -25,33 +25,20 @@ export async function handleSignUp(req, res) {
   }
 
   console.log(result.data.email);
-
-  try {
-    const emailAlreadyExists = await prisma.user.findUnique({
-      where: {
-        email: result.data.email,
-      },
-    });
-    if (emailAlreadyExists) {
-      return res.status(400).send("O email já existe");
-    }
-    const hashedPassword = await bcrypt.hash(result.data.password, 10);
-    const createUser = await prisma.user.create({
-      data: {
-        name: result.data.name,
-        email: result.data.email,
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
-    return res.json(createUser);
-  } catch (e) {
-    res.status(500).send(e);
-  }
+  const hashedPassword = await bcrypt.hash(result.data.password, 10);
+  const createUser = await prisma.user.create({
+    data: {
+      name: result.data.name,
+      email: result.data.email,
+      password: hashedPassword,
+    },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+    },
+  });
+  return res.json(createUser);
 }
 
 export async function handleSignIn(req, res) {
@@ -60,34 +47,30 @@ export async function handleSignIn(req, res) {
     return res.status(400).send(result.error);
   }
 
-  try {
-    const verifyUser = await prisma.user.findUnique({
-      where: {
-        email: result.data.email,
-      },
-      select: {
-        id: true,
-        password: true,
-      },
-    });
-    if (!verifyUser) {
-      return res.status(401).send("Credenciais inválidas");
-    }
-    const isPasswordValid = await bcrypt.compare(
-      result.data.password,
-      verifyUser.password,
+  const verifyUser = await prisma.user.findUnique({
+    where: {
+      email: result.data.email,
+    },
+    select: {
+      id: true,
+      password: true,
+    },
+  });
+  if (!verifyUser) {
+    return res.status(401).send("Credenciais inválidas");
+  }
+  const isPasswordValid = await bcrypt.compare(
+    result.data.password,
+    verifyUser.password,
+  );
+  if (isPasswordValid) {
+    const token = jwt.sign(
+      { userId: verifyUser.id },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "7d" },
     );
-    if (isPasswordValid) {
-      const token = jwt.sign(
-        { userId: verifyUser.id },
-        process.env.JWT_SECRET as string,
-        { expiresIn: '7d' }
-      );
-      return res.json({ token })
-    } else {
-      return res.status(401).send("Credenciais inválidas");
-    }
-  } catch (e) {
-    return res.status(500).send(e);
+    return res.json({ token });
+  } else {
+    return res.status(401).send("Credenciais inválidas");
   }
 }

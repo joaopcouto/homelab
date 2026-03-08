@@ -2,7 +2,6 @@ import express from "express";
 
 import {
   getQuickNotes,
-  getNotesQuery,
   getGlobalQuickNotes,
   createQuickNotes,
   deleteQuickNotes,
@@ -17,8 +16,6 @@ quickNoteRouter.use((req, res, next) => {
 });
 
 quickNoteRouter.get("/", getQuickNotes);
-
-quickNoteRouter.get("/query", getNotesQuery);
 
 quickNoteRouter.get("/search", getGlobalQuickNotes);
 

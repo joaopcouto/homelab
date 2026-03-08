@@ -11,24 +11,28 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
-  todos    Todo[]
+  id         Int         @id @default(autoincrement())
+  name       String
+  email      String      @unique
+  password   String
+  todos      Todo[]
   quicknotes Quicknote[]
-  createdAt DateTime @default(now())
+  createdAt  DateTime    @default(now())
+  habits     Habit[]
+  habitLogs  habitLog[]
 }
 
 model Todo {
-  id        Int       @id @default(autoincrement())
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  note      Quicknote @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  noteId    Int
-  title     String
-  completed Boolean   @default(false)
-  createdAt DateTime  @default(now())
+  id         Int       @id @default(autoincrement())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  note       Quicknote? @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  noteId     Int?
+  title      String
+  completed  Boolean   @default(false)
+  dueDate    DateTime?
+  isPriority Boolean   @default(false)
+  createdAt  DateTime  @default(now())
 }
 
 model Quicknote {
@@ -40,4 +44,27 @@ model Quicknote {
   category  String
   todos     Todo[]
   createdAt DateTime @default(now())
+}
+
+model Habit {
+  id        Int        @id @default(autoincrement())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  name      String
+  type      String
+  logs      habitLog[]
+  createdAt DateTime   @default(now())
+}
+
+model habitLog {
+  id        Int      @id @default(autoincrement())
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  habitId   Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  date      String
+  value     String
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
 }
