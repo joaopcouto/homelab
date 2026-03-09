@@ -3,94 +3,67 @@ import { z } from "zod";
 
 const toggleLogSchema = z.object({
   habitId: z.number().min(1, "O ID do hábito é obrigatório"),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD"),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD"),
   value: z.string().min(1, "O valor é obrigatório"),
 });
 
 const getLogsSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD")
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD"),
 });
 
-const IdSchema = z.object({
-  id: z.string().regex(/^\d+$/, "o ID deve conter apenas números"),
-});
-
-const updateHabitLogSchema = toggleLogSchema.partial();
-
-
-
-export async function getHabitLog(req, res) {
-  const habitLogs = await prisma.habitLog.findMany({
-    where: {
-      id: req.userId,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-  });
-  res.json(habitLogs);
-}
-
-export async function createHabitLog(req, res) {
+export async function toggleHabitLog(req, res) {
   const result = toggleLogSchema.safeParse(req.body);
   if (!result.success) return res.status(400).send(result.error);
 
   const { habitId, date, value } = result.data;
 
-
-
-
-
-  const createHabitLog = await prisma.habitLog.create({
-    data: {
-      userId: req.userId,
-      habitId,
-      date,
-      value,
-    },
-  });
-  res.status(201).json(createHabitLog);
-}
-
-
-
-
-
-export async function updateHabitLog(req, res) {
-  const result = IdSchema.safeParse(req.params);
-  const update = updateHabitLogSchema.safeParse(req.body);
-  if (!result.success) return res.status(400).send(result.error);
-  if (!update.success) return res.status(400).send(update.error);
-
-  const { habitId, date, value } = req.body;
-
-  const id = req.params;
-
-  const updateHabitLog = await prisma.habitLog.update({
+  const habitBelongsToUser = await prisma.habit.findUnique({
     where: {
-      id: Number(id),
+      id: habitId,
       userId: req.userId,
     },
-    data: {
-      habitId,
-      date,
-      value,
-    },
   });
-  res.json(updateHabitLog);
+
+  if (!habitBelongsToUser) return res.status(404).send("Hábito não encontrado ou não te pertence.");
+
+  const log = await prisma.habitLog.upsert({
+    where: {
+      // Usamos a chave composta gerada pelo @@unique([habitId, date]) no schema
+      habitId_date: {
+        habitId: habitId,
+        date: date
+      }
+    },
+    update: {
+      value: value // Se ja existir um log para esse habito nesse dia, apenas atualiza o valor
+    },
+    create: {
+      userId: req.userId,
+      habitId: habitId,
+      date: date,
+      value: value
+    }
+  });
+  res.json(log);
 }
 
-export async function deleteHabitLog(req, res) {
-  const result = IdSchema.safeParse(req.params);
+export async function getHabitLogByDate(req, res) {
+  const result = getLogsSchema.safeParse(req.query);
+  console.log(result.data);
+
   if (!result.success) return res.status(400).send(result.error);
 
-  const id = req.params;
-
-  await prisma.habitLog.delete({
+  const { date } = result.data;
+  
+  const logs = await prisma.habitLog.findMany({
     where: {
-        userId: req.userId,
-        id: Number(id)
+      userId: req.userId,
+      date: date
     },
   });
-  res.status(204).send();
+  res.json(logs);
 }
