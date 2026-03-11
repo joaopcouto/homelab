@@ -127,6 +127,19 @@ export async function deleteQuickNotes(req, res) {
     return res.status(400).send(result.error);
   }
   const { id } = req.params;
+
+  const quickNoteToDelete = await prisma.quicknote.findUnique({
+    where: {
+      id: Number(id),
+      userId: req.userId
+    }
+  });
+
+  if (!quickNoteToDelete) return res.status(404).send("Nota não encontrada");
+
+  const stackKey = `user:${req.userId}:undo_quickNotes`;
+  await cacheService.pushToStack(stackKey, quickNoteToDelete);
+
   await prisma.quicknote.delete({
     where: { id: Number(id), userId: req.userId },
   });

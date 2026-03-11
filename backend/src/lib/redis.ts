@@ -39,4 +39,24 @@ export const cacheService = {
       console.error(`🚨 Erro ao deletar cache da chave ${key}:`, err);
     }
   },
+
+  async pushToStack(key: string, value: any, expirationInSeconds: number = 300) {
+    try {
+      await redisClient.lPush(key, JSON.stringify(value));
+      await redisClient.lTrim(key, 0, 4);
+      await redisClient.expire(key, expirationInSeconds);
+    } catch (err) {
+      console.error(`🚨 Erro ao adicionar à pilha da chave ${key}:`, err);
+    }
+  },
+
+  async popFromStack(key: string) {
+    try {
+      const data = await redisClient.lPop(key);
+      if (!data) return null;
+      return JSON.parse(data);gi
+    } catch (err) {
+      console.error(`🚨 Erro ao apagar cache da chave ${key}:`, err);
+    }
+  }
 };

@@ -1,5 +1,6 @@
 import prisma from "../database/prisma.ts";
 import { z } from "zod";
+import { cacheService } from "../lib/redis.ts";
 
 const createTodoSchema = z.object({
   noteId: z.number().min(1, "O ID do uma nota é obrigatória"),
@@ -62,12 +63,12 @@ export async function getTodos(req, res) {
   res.json({
     data: formattedTodos,
     meta: {
-        totalItens: total,
-        currentPage: page,
-        totalPages: totalPages
-    }
+      totalItens: total,
+      currentPage: page,
+      totalPages: totalPages,
+    },
   });
-};
+}
 
 export async function createTodo(req, res) {
   const result = createTodoSchema.safeParse(req.body);
@@ -95,6 +96,17 @@ export async function deleteTodo(req, res) {
   }
 
   const { id } = req.params;
+
+  const todoToDelete = await prisma.todo.findUnique({
+    where: {
+      id: Number(id), userId: req.userId
+    }
+  });
+  if (!todoToDelete) return res.status(404).send("Tarefa não encontrada.");
+
+  const stackKey = `user:${req.userId}:undo_todos`
+  await cacheService.pushToStack(stackKey, todoToDelete);
+
   const deleteTodo = await prisma.todo.delete({
     where: { id: Number(id), userId: req.userId },
   });

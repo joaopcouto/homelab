@@ -7,6 +7,7 @@ import {
 } from "../controllers/habitController.ts";
 import { authMiddleware } from "../middlewares/authMiddleware.ts";
 import {
+  getHabitHeatmap,
   getHabitLogByDate,
   toggleHabitLog,
 } from "../controllers/habitLogController.ts";
@@ -20,6 +21,8 @@ habitRouter.use((req, res, next) => {
 habitRouter.get("/", getHabits);
 
 habitRouter.get("/logs", getHabitLogByDate);
+
+habitRouter.get("/heatmap", getHabitHeatmap);
 
 habitRouter.post("/logs", toggleHabitLog);
 

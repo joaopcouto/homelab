@@ -15,6 +15,11 @@ const getLogsSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD"),
 });
 
+const getHeatmapSchema = z.object({
+  month: z.string().regex(/^(0[1-9]|1[0-2])$/, "Mês deve ser entre 01 e 12"),
+  year: z.string().regex(/^\d{4}$/, "Ano deve ter 4 dígitos"),
+});
+
 export async function toggleHabitLog(req, res) {
   const result = toggleLogSchema.safeParse(req.body);
   if (!result.success) return res.status(400).send(result.error);
@@ -28,42 +33,97 @@ export async function toggleHabitLog(req, res) {
     },
   });
 
-  if (!habitBelongsToUser) return res.status(404).send("Hábito não encontrado ou não te pertence.");
+  if (!habitBelongsToUser)
+    return res.status(404).send("Hábito não encontrado ou não te pertence.");
 
   const log = await prisma.habitLog.upsert({
     where: {
       // Usamos a chave composta gerada pelo @@unique([habitId, date]) no schema
       habitId_date: {
         habitId: habitId,
-        date: date
-      }
+        date: date,
+      },
     },
     update: {
-      value: value // Se ja existir um log para esse habito nesse dia, apenas atualiza o valor
+      value: value, // Se ja existir um log para esse habito nesse dia, apenas atualiza o valor
     },
     create: {
       userId: req.userId,
       habitId: habitId,
       date: date,
-      value: value
-    }
+      value: value,
+    },
   });
   res.json(log);
 }
 
 export async function getHabitLogByDate(req, res) {
   const result = getLogsSchema.safeParse(req.query);
-  console.log(result.data);
 
   if (!result.success) return res.status(400).send(result.error);
 
   const { date } = result.data;
-  
+
+  const [logsDoDia, completados, totalDeHabitos] = await prisma.$transaction([
+   prisma.habitLog.findMany({
+     where: {
+       userId: req.userId,
+       date: date,
+     },
+   }),
+   prisma.habitLog.count({
+    where: {
+      userId: req.userId,
+      date: date,
+      value: { not: "false"}
+    }
+   }),
+   prisma.habit.count({
+    where: {
+      userId: req.userId,
+    }
+   }),
+  ]);
+
+  const porcentagem = totalDeHabitos === 0 ? 0 : Math.round((completados/totalDeHabitos) * 100)
+
+  const formattedLogs = {
+    "Habits": logsDoDia,
+    "Completados": completados,
+    "Porcentagem completada": porcentagem,
+  }
+  res.json(formattedLogs);
+}
+
+export async function getHabitHeatmap(req, res) {
+  const result = getHeatmapSchema.safeParse(req.query);
+
+  if (!result.success) return res.status(400).send(result.error);
+
+  const { month, year } = result.data;
+
   const logs = await prisma.habitLog.findMany({
     where: {
       userId: req.userId,
-      date: date
+      date: { startsWith: `${year}-${month}` },
+      value: { not: "false" },
+    },
+    include: {
+      habit: {
+        select: { name: true },
+      },
     },
   });
-  res.json(logs);
+
+  const heatmapData: Record<string, { count: number; habits: string[] }> = {};
+
+  for (const log of logs) {
+    if (!heatmapData[log.date]) {
+      heatmapData[log.date] = { count: 0, habits: [] };
+    }
+
+    heatmapData[log.date].habits.push(log.habit.name);
+    heatmapData[log.date].count += 1;
+  }
+  res.json(heatmapData);
 }
