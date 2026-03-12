@@ -14,6 +14,12 @@ const getTodoSchema = z.object({
   page: z.coerce.number().min(1).default(1),
   limit: z.coerce.number().min(1).default(10),
   sort: z.enum(["asc", "desc"]).default("desc"),
+  startDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD"),
+    endDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "A data deve estar no formato YYYY-MM-DD"),
 });
 
 const IdSchema = z.object({
@@ -27,15 +33,29 @@ export async function getTodos(req, res) {
     return res.status(400).send(result.error);
   }
 
-  const { page, limit, sort } = result.data;
+  const { page, limit, sort, startDate, endDate } = result.data;
 
   const skip = (page - 1) * limit;
 
+  const whereClause: any = {
+    userId: req.userId,
+  };
+
+  if (startDate && endDate) {
+    whereClause.dueDate = {
+      gte: new Date(startDate),
+      lte: new Date(endDate),
+    }
+  }
+
   const [todos, total] = await prisma.$transaction([
     prisma.todo.findMany({
-      where: { userId: req.userId },
+      where: whereClause,
       orderBy: {
         createdAt: sort,
+      },
+      include: {
+        note: true
       },
       skip,
       take: limit,
