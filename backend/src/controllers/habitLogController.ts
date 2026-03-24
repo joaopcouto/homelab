@@ -65,11 +65,17 @@ export async function getHabitLogByDate(req, res) {
   const { date } = result.data;
 
   const [logsDoDia, completados, totalDeHabitos] = await prisma.$transaction([
-   prisma.habitLog.findMany({
+   prisma.habit.findMany({
      where: {
        userId: req.userId,
-       date: date,
      },
+     include: {
+      logs: {
+        where: {
+          date: date
+        }
+      }
+     }
    }),
    prisma.habitLog.count({
     where: {
@@ -87,10 +93,13 @@ export async function getHabitLogByDate(req, res) {
 
   const porcentagem = totalDeHabitos === 0 ? 0 : Math.round((completados/totalDeHabitos) * 100)
 
+  console.log(logsDoDia)
+
   const formattedLogs = {
-    "Habits": logsDoDia,
-    "Completados": completados,
-    "Porcentagem completada": porcentagem,
+    "habits": logsDoDia,
+    "completados": completados,
+    "total": totalDeHabitos,
+    "porcentagemCompletada": porcentagem,
   }
   res.json(formattedLogs);
 }
